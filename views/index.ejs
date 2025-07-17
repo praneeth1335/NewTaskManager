@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TaskFlow - World's Best Task Manager</title>
+    <link rel="stylesheet" href="/css/elegant-styles.css" />
+    <style>
+      .floating-message {
+        position: fixed;
+        top: 2rem;
+        right: 2rem;
+        background: rgba(15, 15, 26, 0.95);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: var(--radius-xl);
+        padding: var(--space-4) var(--space-6);
+        color: var(--dark-text);
+        font-weight: 600;
+        box-shadow: var(--shadow-2xl), var(--shadow-glow);
+        transform: translateX(400px);
+        transition: all var(--transition-bounce);
+        z-index: var(--z-toast);
+        max-width: 320px;
+      }
+
+      .floating-message.show {
+        transform: translateX(0);
+      }
+
+      .floating-message.success {
+        border-color: rgba(16, 185, 129, 0.4);
+        box-shadow: var(--shadow-2xl), 0 0 30px rgba(16, 185, 129, 0.3);
+      }
+
+      .floating-message.error {
+        border-color: rgba(239, 68, 68, 0.4);
+        box-shadow: var(--shadow-2xl), 0 0 30px rgba(239, 68, 68, 0.3);
+      }
+
+      .floating-message.info {
+        border-color: rgba(59, 130, 246, 0.4);
+        box-shadow: var(--shadow-2xl), 0 0 30px rgba(59, 130, 246, 0.3);
+      }
+
+      .hero-section {
+        background: var(--gradient-dark);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .hero-section::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--gradient-hologram);
+        background-size: 200% 200%;
+        animation: hologramShift 3s ease-in-out infinite;
+      }
+
+      .stats-card {
+        background: rgba(26, 26, 46, 0.6);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: var(--radius-xl);
+        padding: var(--space-6);
+        text-align: center;
+        transition: all var(--transition-normal);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .stats-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(59, 130, 246, 0.1),
+          transparent
+        );
+        transition: left var(--transition-slow);
+      }
+
+      .stats-card:hover::before {
+        left: 100%;
+      }
+
+      .stats-card:hover {
+        transform: translateY(-4px) scale(1.05);
+        border-color: rgba(59, 130, 246, 0.3);
+        box-shadow: var(--shadow-2xl), var(--shadow-glow);
+      }
+
+      .stats-number {
+        font-size: 2.5rem;
+        font-weight: 900;
+        font-family: var(--font-display);
+        background: var(--gradient-primary);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: var(--space-2);
+        line-height: 1;
+      }
+
+      .profile-card {
+        background: var(--gradient-dark);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .profile-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--gradient-secondary);
+      }
+
+      .profile-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: var(--radius-2xl);
+        background: var(--gradient-hologram);
+        background-size: 200% 200%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        font-weight: 900;
+        color: white;
+        margin: 0 auto var(--space-4);
+        animation: hologramShift 3s ease-in-out infinite;
+        box-shadow: var(--shadow-xl);
+        position: relative;
+      }
+
+      .profile-avatar::after {
+        content: "";
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: var(--gradient-hologram);
+        background-size: 200% 200%;
+        border-radius: var(--radius-2xl);
+        z-index: -1;
+        animation: hologramShift 3s ease-in-out infinite;
+      }
+
+      .task-creation-card {
+        background: var(--gradient-dark);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .task-creation-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--gradient-primary);
+      }
+
+      .enhanced-task-card {
+        background: var(--dark-surface);
+        border: 1px solid var(--dark-border);
+        border-radius: var(--radius-2xl);
+        padding: var(--space-8);
+        transition: all var(--transition-normal);
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--shadow-lg);
+      }
+
+      .enhanced-task-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--gradient-primary);
+        transform: scaleX(0);
+        transition: transform var(--transition-normal);
+      }
+
+      .enhanced-task-card::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: var(--gradient-glass);
+        opacity: 0;
+        transition: opacity var(--transition-normal);
+        pointer-events: none;
+      }
+
+      .enhanced-task-card:hover::before {
+        transform: scaleX(1);
+      }
+
+      .enhanced-task-card:hover::after {
+        opacity: 1;
+      }
+
+      .enhanced-task-card:hover {
+        transform: translateY(-8px) scale(1.02);
+        border-color: var(--primary-500);
+        box-shadow: var(--shadow-3xl), var(--shadow-glow);
+      }
+
+      .task-actions {
+        display: flex;
+        gap: var(--space-4);
+        align-items: center;
+      }
+
+      .task-action-link {
+        color: var(--dark-text-secondary);
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.875rem;
+        padding: var(--space-2) var(--space-3);
+        border-radius: var(--radius-lg);
+        transition: all var(--transition-normal);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .task-action-link::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: currentColor;
+        opacity: 0;
+        transition: opacity var(--transition-normal);
+        border-radius: var(--radius-lg);
+      }
+
+      .task-action-link:hover::before {
+        opacity: 0.1;
+      }
+
+      .task-action-link.edit:hover {
+        color: var(--primary-500);
+        transform: translateY(-1px);
+      }
+
+      .task-action-link.delete:hover {
+        color: var(--error-500);
+        transform: translateY(-1px);
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: var(--space-20);
+        background: var(--gradient-dark);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .empty-state::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--gradient-tertiary);
+      }
+
+      .empty-icon {
+        width: 120px;
+        height: 120px;
+        border-radius: var(--radius-3xl);
+        background: rgba(59, 130, 246, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        margin: 0 auto var(--space-8);
+        border: 2px solid rgba(59, 130, 246, 0.2);
+        animation: float 3s ease-in-out infinite;
+      }
+
+      .welcome-badge {
+        background: rgba(26, 26, 46, 0.8);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: var(--radius-full);
+        padding: var(--space-3) var(--space-6);
+        font-weight: 600;
+        color: var(--primary-500);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .welcome-badge::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(59, 130, 246, 0.2),
+          transparent
+        );
+        animation: shimmer 2s infinite;
+      }
+
+      @keyframes shimmer {
+        0% {
+          left: -100%;
+        }
+        100% {
+          left: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Navigation -->
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-content">
+          <a href="/" class="navbar-brand">
+            <div class="logo">T</div>
+            <span class="text-gradient-hologram">TaskFlow</span>
+          </a>
+
+          <div class="navbar-nav">
+            <div class="welcome-badge">
+              <span>Welcome, <%= user.username %></span>
+            </div>
+            <form action="/logout" method="GET">
+              <button type="submit" class="btn btn-secondary btn-sm">
+                <span>🚪</span> Logout
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container">
+      <!-- Hero Section -->
+      <section class="hero-section glass-card p-12 mb-12 mt-8 animate-fade-in">
+        <div class="text-center">
+          <h1 class="text-5xl font-black text-primary mb-6 font-display">
+            World's Best
+            <span class="text-gradient-hologram">Task Manager</span>
+          </h1>
+          <p
+            class="text-xl text-secondary mb-8 font-medium max-w-3xl mx-auto leading-relaxed"
+          >
+            Experience the future of productivity with our revolutionary task
+            management platform
+          </p>
+
+          <!-- Stats Grid -->
+          <div class="grid grid-3 md:grid-1 gap-6">
+            <div class="stats-card hover-lift animate-fade-in stagger-1">
+              <div class="stats-number"><%= tasks.length %></div>
+              <div class="text-secondary font-semibold">Active Tasks</div>
+            </div>
+            <div class="stats-card hover-lift animate-fade-in stagger-2">
+              <div class="stats-number">100%</div>
+              <div class="text-secondary font-semibold">Uptime</div>
+            </div>
+            <div class="stats-card hover-lift animate-fade-in stagger-3">
+              <div class="stats-number">Pro</div>
+              <div class="text-secondary font-semibold">Version</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Main Content Grid -->
+      <div class="grid lg:grid-3 md:grid-1 gap-8 mb-12">
+        <!-- Task Creation Panel -->
+        <div class="lg:col-span-2">
+          <div class="task-creation-card card animate-slide-in">
+            <div class="p-8 border-b border-gray-700">
+              <h2
+                class="text-2xl font-bold text-primary flex items-center gap-4"
+              >
+                <div
+                  class="logo"
+                  style="width: 40px; height: 40px; font-size: 1.2rem"
+                >
+                  +
+                </div>
+                <span class="text-gradient">Create New Task</span>
+              </h2>
+              <p class="text-muted mt-2">Add a new task to your workflow</p>
+            </div>
+
+            <div class="p-8">
+              <form
+                action="/tasks"
+                method="POST"
+                class="space-y-6"
+                id="taskForm"
+              >
+                <div class="form-group">
+                  <label class="form-label"> <span>🎯</span> Task Title </label>
+                  <div class="input-group">
+                    <div class="input-icon">📝</div>
+                    <input
+                      type="text"
+                      name="title"
+                      class="form-input focus-ring"
+                      placeholder="Enter task title..."
+                      required
+                      id="taskTitle"
+                    />
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">
+                    <span>📋</span> Description
+                  </label>
+                  <textarea
+                    name="description"
+                    class="form-input form-textarea focus-ring"
+                    placeholder="Describe your task..."
+                    required
+                    id="taskDescription"
+                  ></textarea>
+                </div>
+
+                <button
+                  type="submit"
+                  class="btn btn-primary btn-lg hover-scale"
+                >
+                  <span>✨</span> Create Task
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Profile Panel -->
+        <div class="profile-card card animate-slide-in stagger-2">
+          <div class="p-8 text-center">
+            <div class="profile-avatar">BP</div>
+            <h3 class="text-2xl font-bold text-gradient mb-2">B S Praneeth</h3>
+            <p class="text-blue mb-6 font-medium">Developer</p>
+
+            <div class="space-y-3">
+              <a
+                href="https://www.linkedin.com/in/bodapatisaipraneeth/"
+                target="_blank"
+                class="btn btn-primary w-full hover-glow"
+              >
+                <span>💼</span> LinkedIn
+              </a>
+              <a
+                href="https://www.instagram.com/praneeth_bodapati/"
+                target="_blank"
+                class="btn btn-secondary w-full hover-glow"
+              >
+                <span>📸</span> Instagram
+              </a>
+            </div>
+
+            <div class="mt-8 pt-6 border-t border-gray-700">
+              <p class="text-muted text-sm font-medium italic">
+                "Building tomorrow's solutions today"
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Task Grid -->
+      <section class="mb-12">
+        <div class="text-center mb-8">
+          <h2 class="text-4xl font-bold text-primary mb-4 font-display">
+            Your <span class="text-gradient-hologram">Tasks</span>
+          </h2>
+          <p class="text-secondary text-lg">Manage and track your progress</p>
+        </div>
+
+        <% if (tasks.length > 0) { %>
+        <div class="task-grid">
+          <% tasks.forEach((task, index) => { %>
+          <div
+            class="enhanced-task-card animate-fade-in"
+            style="animation-delay: <%= (index * 0.1) .toFixed(1) %>s"
+          >
+            <div class="mb-6">
+              <h3 class="text-xl font-bold text-primary mb-3">
+                <%= task.title %>
+              </h3>
+              <p class="text-secondary leading-relaxed">
+                <%= task.description %>
+              </p>
+            </div>
+
+            <div class="flex justify-between items-center">
+              <div class="task-actions">
+                <a
+                  href="/tasks/<%= task._id %>/edit"
+                  class="task-action-link edit"
+                >
+                  ✏️ Edit
+                </a>
+                <a
+                  href="/tasks/<%= task._id %>/delete"
+                  class="task-action-link delete"
+                >
+                  🗑️ Delete
+                </a>
+              </div>
+              <a
+                href="/readmore/<%= task._id %>/"
+                class="btn btn-primary btn-sm hover-scale"
+              >
+                <span>👁️</span> View
+              </a>
+            </div>
+          </div>
+          <% }); %>
+        </div>
+        <% } else { %>
+        <div class="empty-state card animate-fade-in">
+          <div class="empty-icon">📊</div>
+          <h3 class="text-3xl font-bold text-muted mb-4">No Tasks Yet</h3>
+          <p class="text-secondary mb-8 text-lg max-w-md mx-auto">
+            Get started by creating your first task above
+          </p>
+          <button
+            class="btn btn-primary btn-lg hover-scale"
+            onclick="document.querySelector('input[name=title]').focus()"
+          >
+            <span>🚀</span> Create First Task
+          </button>
+        </div>
+        <% } %>
+      </section>
+    </div>
+
+    <!-- Floating Message Container -->
+    <div id="floatingMessage" class="floating-message">
+      <div class="flex items-center gap-3">
+        <span id="messageIcon" class="text-xl"></span>
+        <span id="messageText" class="text-sm"></span>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+
+        function showFloatingMessage(message, type = 'info', icon = '💡', duration = 4000) {
+          const floatingMessage = document.getElementById('floatingMessage');
+          const messageIcon = document.getElementById('messageIcon');
+          const messageText = document.getElementById('messageText');
+
+          messageIcon.textContent = icon;
+          messageText.textContent = message;
+
+          floatingMessage.className = `floating-message ${type}`;
+          floatingMessage.classList.add('show');
+
+          setTimeout(() => {
+            floatingMessage.classList.remove('show');
+          }, duration);
+        }
+
+        // Enhanced task card interactions
+        const taskCards = document.querySelectorAll('.enhanced-task-card');
+        taskCards.forEach(card => {
+          card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-8px) scale(1.02)';
+            this.style.borderColor = 'var(--primary-500)';
+            this.style.boxShadow = 'var(--shadow-3xl), var(--shadow-glow)';
+          });
+
+          card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0) scale(1)';
+            this.style.borderColor = 'var(--dark-border)';
+            this.style.boxShadow = 'var(--shadow-lg)';
+          });
+        });
+
+        // Form enhancements
+        const inputs = document.querySelectorAll('.form-input');
+        inputs.forEach(input => {
+          input.addEventListener('focus', function() {
+            this.style.borderColor = 'var(--primary-500)';
+            this.style.boxShadow = '0 0 0 4px rgba(59, 130, 246, 0.15), var(--shadow-lg)';
+            this.style.background = 'var(--dark-surface-2)';
+            this.style.transform = 'scale(1.01)';
+          });
+
+          input.addEventListener('blur', function() {
+            this.style.borderColor = 'var(--dark-border)';
+            this.style.boxShadow = 'var(--shadow-inner)';
+            this.style.background = 'var(--dark-surface)';
+            this.style.transform = 'scale(1)';
+          });
+
+          input.addEventListener('input', function() {
+            this.style.borderColor = 'var(--success-500)';
+            setTimeout(() => {
+              if (this === document.activeElement) {
+                this.style.borderColor = 'var(--primary-500)';
+              }
+            }, 200);
+          });
+        });
+
+        // Task form submission
+        const taskForm = document.getElementById('taskForm');
+        const taskTitle = document.getElementById('taskTitle');
+        const taskDescription = document.getElementById('taskDescription');
+
+        taskForm.addEventListener('submit', function(e) {
+          const title = taskTitle.value.trim();
+          const description = taskDescription.value.trim();
+
+          if (!title) {
+            e.preventDefault();
+            showFloatingMessage('Please enter a task title', 'error', '❌');
+            taskTitle.focus();
+            return;
+          }
+
+          if (!description) {
+            e.preventDefault();
+            showFloatingMessage('Please enter a task description', 'error', '❌');
+            taskDescription.focus();
+            return;
+          }
+
+          showFloatingMessage('Creating your task...', 'info', '✨');
+        });
+
+        // Input validation feedback
+        taskTitle.addEventListener('input', function() {
+          const title = this.value.trim();
+          if (title.length >= 3) {
+            showFloatingMessage('Great title!', 'success', '🎯', 2000);
+          }
+        });
+
+        taskDescription.addEventListener('input', function() {
+          const description = this.value.trim();
+          if (description.length >= 10) {
+            showFloatingMessage('Detailed description!', 'success', '📋', 2000);
+          }
+        });
+
+        // Button ripple effects
+        const buttons = document.querySelectorAll('.btn');
+        buttons.forEach(button => {
+          button.addEventListener('click', function(e) {
+            const ripple = document.createElement('span');
+            const rect = this.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            const x = e.clientX - rect.left - size / 2;
+            const y = e.clientY - rect.top - size / 2;
+
+            ripple.style.cssText = `
+              position: absolute;
+              width: ${size}px;
+              height: ${size}px;
+              left: ${x}px;
+              top: ${y}px;
+              background: rgba(255, 255, 255, 0.3);
+              border-radius: 50%;
+              transform: scale(0);
+              animation: ripple 0.6s linear;
+              pointer-events: none;
+              z-index: 1;
+            `;
+
+            this.appendChild(ripple);
+
+            setTimeout(() => {
+              ripple.remove();
+            }, 600);
+          });
+        });
+
+        // Stats cards animation
+        const statsCards = document.querySelectorAll('.stats-card');
+        statsCards.forEach((card, index) => {
+          setInterval(() => {
+            if (!card.matches(':hover')) {
+              card.style.transform = `translateY(${Math.sin(Date.now() * 0.001 + index) * 2}px)`;
+            }
+          }, 50);
+        });
+
+        // Welcome message
+        setTimeout(() => {
+          showFloatingMessage('Welcome to TaskFlow! Ready to boost your productivity?', 'success', '🚀');
+        }, 1000);
+
+        // Task count celebration
+        const taskCount = <%= tasks.length %>;
+        if (taskCount > 0) {
+          setTimeout(() => {
+            showFloatingMessage(`You have ${taskCount} active task${taskCount > 1 ? 's' : ''}!`, 'info', '📊', 3000);
+          }, 6000);
+        }
+
+        // Add ripple animation
+        const style = document.createElement('style');
+        style.textContent = `
+          @keyframes ripple {
+            to {
+              transform: scale(4);
+              opacity: 0;
+            }
+          }
+        `;
+        document.head.appendChild(style);
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Join TaskFlow - World's Best Task Manager</title>
+    <link rel="stylesheet" href="/css/elegant-styles.css" />
+    <style>
+      /* Ensure single page fit */
+      body {
+        height: 100vh;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+      }
+      
+      .register-container {
+        width: 100%;
+        max-width: 480px;
+        height: 100vh;
+        max-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        overflow-y: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+      
+      .register-container::-webkit-scrollbar {
+        display: none;
+      }
+      
+      .strength-meter {
+        margin-top: var(--space-2);
+        padding: var(--space-3);
+        background: rgba(26, 26, 46, 0.6);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: var(--radius-lg);
+        transition: all var(--transition-normal);
+      }
+      
+      .strength-bar {
+        height: 6px;
+        background: var(--dark-border);
+        border-radius: var(--radius-full);
+        overflow: hidden;
+        margin: var(--space-2) 0;
+        position: relative;
+      }
+      
+      .strength-fill {
+        height: 100%;
+        transition: all var(--transition-slow);
+        border-radius: var(--radius-full);
+        position: relative;
+        overflow: hidden;
+      }
+      
+      .strength-fill::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+        animation: shimmer 2s infinite;
+      }
+      
+      @keyframes shimmer {
+        0% { left: -100%; }
+        100% { left: 100%; }
+      }
+      
+      .strength-weak { 
+        background: linear-gradient(90deg, #ef4444, #f87171);
+        box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+      }
+      .strength-fair { 
+        background: linear-gradient(90deg, #f59e0b, #fbbf24);
+        box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
+      }
+      .strength-good { 
+        background: linear-gradient(90deg, #3b82f6, #60a5fa);
+        box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+      }
+      .strength-strong { 
+        background: linear-gradient(90deg, #10b981, #34d399);
+        box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+      }
+      
+      .floating-message {
+        position: fixed;
+        top: 2rem;
+        right: 2rem;
+        background: rgba(15, 15, 26, 0.95);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: var(--radius-xl);
+        padding: var(--space-4) var(--space-6);
+        color: var(--dark-text);
+        font-weight: 600;
+        box-shadow: var(--shadow-2xl), var(--shadow-glow);
+        transform: translateX(400px);
+        transition: all var(--transition-bounce);
+        z-index: var(--z-toast);
+        max-width: 320px;
+      }
+      
+      .floating-message.show {
+        transform: translateX(0);
+      }
+      
+      .floating-message.success {
+        border-color: rgba(16, 185, 129, 0.4);
+        box-shadow: var(--shadow-2xl), 0 0 30px rgba(16, 185, 129, 0.3);
+      }
+      
+      .floating-message.error {
+        border-color: rgba(239, 68, 68, 0.4);
+        box-shadow: var(--shadow-2xl), 0 0 30px rgba(239, 68, 68, 0.3);
+      }
+      
+      .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-3);
+        margin-top: var(--space-4);
+      }
+      
+      .feature-card {
+        background: rgba(26, 26, 46, 0.4);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: var(--radius-lg);
+        padding: var(--space-3);
+        text-align: center;
+        transition: all var(--transition-normal);
+        position: relative;
+        overflow: hidden;
+      }
+      
+      .feature-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+        transition: left var(--transition-slow);
+      }
+      
+      .feature-card:hover::before {
+        left: 100%;
+      }
+      
+      .feature-card:hover {
+        transform: translateY(-2px) scale(1.02);
+        border-color: rgba(59, 130, 246, 0.3);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15), 0 0 20px rgba(59, 130, 246, 0.2);
+      }
+      
+      .compact-form {
+        padding: var(--space-6);
+      }
+      
+      .compact-form .form-group {
+        margin-bottom: var(--space-4);
+      }
+      
+      .compact-form .form-input {
+        padding: var(--space-3) var(--space-4);
+        font-size: 0.9rem;
+      }
+      
+      .compact-form .input-group .form-input {
+        padding-left: calc(var(--space-4) * 2.2);
+      }
+      
+      .compact-form .input-icon {
+        left: var(--space-4);
+        font-size: 1rem;
+      }
+      
+      .logo-header {
+        text-align: center;
+        margin-bottom: var(--space-4);
+      }
+      
+      .logo-header .logo {
+        width: 56px;
+        height: 56px;
+        font-size: 1.4rem;
+        margin: 0 auto var(--space-3);
+        background: var(--gradient-hologram);
+        background-size: 200% 200%;
+        animation: hologramShift 3s ease-in-out infinite;
+      }
+      
+      .brand-text {
+        font-family: var(--font-display);
+        font-size: 1.8rem;
+        font-weight: 800;
+        background: var(--gradient-hologram);
+        background-size: 200% 200%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: hologramShift 3s ease-in-out infinite;
+        letter-spacing: 0.05em;
+      }
+      
+      .subtitle {
+        font-size: 0.9rem;
+        color: var(--dark-text-secondary);
+        margin-top: var(--space-1);
+      }
+      
+      @media (max-height: 700px) {
+        .register-container {
+          padding: 0.5rem 0;
+        }
+        
+        .compact-form {
+          padding: var(--space-4);
+        }
+        
+        .logo-header .logo {
+          width: 48px;
+          height: 48px;
+          font-size: 1.2rem;
+          margin-bottom: var(--space-2);
+        }
+        
+        .brand-text {
+          font-size: 1.5rem;
+        }
+        
+        .feature-grid {
+          margin-top: var(--space-3);
+          gap: var(--space-2);
+        }
+        
+        .feature-card {
+          padding: var(--space-2);
+        }
+        
+        .strength-meter {
+          padding: var(--space-2);
+        }
+      }
+      
+      @media (max-height: 600px) {
+        .feature-grid {
+          display: none;
+        }
+        
+        .compact-form .form-group {
+          margin-bottom: var(--space-3);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    
+    <div class="register-container">
+      <!-- Register Card -->
+      <div class="glass-card animate-scale-in">
+        <div class="compact-form">
+          <!-- Logo Header -->
+          <div class="logo-header">
+            <div class="logo animate-float"></div>
+            <h1 class="brand-text">TaskFlow</h1>
+            <p class="subtitle">World's Best Task Manager</p>
+          </div>
+
+          <!-- Error/Success Messages -->
+          <% if (error) { %>
+          <div class="glass-card bg-red-500/10 border-red-500/30 p-3 rounded-lg mb-4 text-center">
+            <div class="flex items-center justify-center gap-2">
+              <span class="text-lg">⚠️</span>
+              <span class="text-danger font-medium text-sm"><%= error %></span>
+            </div>
+          </div>
+          <% } %>
+
+          <% if (success_msg) { %>
+          <div class="glass-card bg-green-500/10 border-green-500/30 p-3 rounded-lg mb-4 text-center">
+            <div class="flex items-center justify-center gap-2">
+              <span class="text-lg">✅</span>
+              <span class="text-success font-medium text-sm"><%= success_msg %></span>
+            </div>
+          </div>
+          <% } %>
+
+          <!-- Register Form -->
+          <form action="/register" method="POST" class="space-y-4">
+            <div class="form-group">
+              <label for="username" class="form-label text-sm">
+                Username
+              </label>
+              <div class="input-group">
+                <div class="input-icon">👤</div>
+                <input
+                  type="text"
+                  id="username"
+                  name="username"
+                  required
+                  minlength="3"
+                  maxlength="20"
+                  class="form-input focus-ring"
+                  placeholder="Choose username"
+                />
+              </div>
+              <p class="text-xs text-muted mt-1">3-20 characters, letters and numbers</p>
+            </div>
+
+            <div class="form-group">
+              <label for="password" class="form-label text-sm">
+                Password
+              </label>
+              <div class="input-group">
+                <div class="input-icon">🔒</div>
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  required
+                  minlength="6"
+                  class="form-input focus-ring"
+                  placeholder="Create secure password"
+                />
+              </div>
+              
+              <!-- Password Strength Meter -->
+              <div class="strength-meter" id="strengthMeter" style="display: none;">
+                <div class="flex justify-between items-center mb-1">
+                  <span class="text-xs font-semibold text-secondary">Strength</span>
+                  <span id="strengthLevel" class="text-xs font-bold">Weak</span>
+                </div>
+                <div class="strength-bar">
+                  <div id="strengthFill" class="strength-fill w-0"></div>
+                </div>
+                <div class="grid grid-2 gap-1 mt-2 text-xs">
+                  <div id="lengthCheck" class="text-muted">• 6+ chars</div>
+                  <div id="caseCheck" class="text-muted">• Mixed case</div>
+                  <div id="numberCheck" class="text-muted">• Numbers</div>
+                  <div id="specialCheck" class="text-muted">• Special</div>
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-lg w-full hover-scale">
+              <span>✨</span> Create Account
+            </button>
+          </form>
+
+          <!-- Login Link -->
+          <div class="text-center mt-4">
+            <div class="glass-card p-3 rounded-lg">
+              <p class="text-secondary text-sm">
+                Have an account?
+                <a href="/login" class="text-blue hover:text-blue-400 font-semibold ml-1 transition-colors">
+                  Sign in
+                </a>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Features Grid -->
+      <div class="feature-grid animate-fade-in stagger-2">
+        <div class="feature-card hover-lift">
+          <div class="text-blue text-xl mb-1">🎯</div>
+          <div class="text-xs text-primary font-semibold">Goal Tracking</div>
+        </div>
+        <div class="feature-card hover-lift">
+          <div class="text-success text-xl mb-1">📊</div>
+          <div class="text-xs text-primary font-semibold">Analytics</div>
+        </div>
+        <div class="feature-card hover-lift">
+          <div class="text-warning text-xl mb-1">🔄</div>
+          <div class="text-xs text-primary font-semibold">Sync</div>
+        </div>
+        <div class="feature-card hover-lift">
+          <div class="text-danger text-xl mb-1">⚡</div>
+          <div class="text-xs text-primary font-semibold">Fast</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating Message Container -->
+    <div id="floatingMessage" class="floating-message">
+      <div class="flex items-center gap-3">
+        <span id="messageIcon" class="text-xl"></span>
+        <span id="messageText" class="text-sm"></span>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        // Password strength analyzer
+        const passwordInput = document.getElementById('password');
+        const strengthMeter = document.getElementById('strengthMeter');
+        const strengthFill = document.getElementById('strengthFill');
+        const strengthLevel = document.getElementById('strengthLevel');
+        const lengthCheck = document.getElementById('lengthCheck');
+        const caseCheck = document.getElementById('caseCheck');
+        const numberCheck = document.getElementById('numberCheck');
+        const specialCheck = document.getElementById('specialCheck');
+        
+        function showFloatingMessage(message, type = 'info', icon = '💡') {
+          const floatingMessage = document.getElementById('floatingMessage');
+          const messageIcon = document.getElementById('messageIcon');
+          const messageText = document.getElementById('messageText');
+          
+          messageIcon.textContent = icon;
+          messageText.textContent = message;
+          
+          floatingMessage.className = `floating-message ${type}`;
+          floatingMessage.classList.add('show');
+          
+          setTimeout(() => {
+            floatingMessage.classList.remove('show');
+          }, 4000);
+        }
+        
+        passwordInput.addEventListener('input', function() {
+          const password = this.value;
+          strengthMeter.style.display = password.length > 0 ? 'block' : 'none';
+          
+          if (password.length === 0) return;
+          
+          let strength = 0;
+          let checks = {
+            length: password.length >= 6,
+            case: /[a-z]/.test(password) && /[A-Z]/.test(password),
+            number: /[0-9]/.test(password),
+            special: /[^a-zA-Z0-9]/.test(password)
+          };
+          
+          // Update individual checks
+          lengthCheck.textContent = `• ${checks.length ? '✓' : '✗'} 6+ chars`;
+          lengthCheck.className = checks.length ? 'text-success' : 'text-muted';
+          
+          caseCheck.textContent = `• ${checks.case ? '✓' : '✗'} Mixed case`;
+          caseCheck.className = checks.case ? 'text-success' : 'text-muted';
+          
+          numberCheck.textContent = `• ${checks.number ? '✓' : '✗'} Numbers`;
+          numberCheck.className = checks.number ? 'text-success' : 'text-muted';
+          
+          specialCheck.textContent = `• ${checks.special ? '✓' : '✗'} Special`;
+          specialCheck.className = checks.special ? 'text-success' : 'text-muted';
+          
+          // Calculate strength
+          Object.values(checks).forEach(check => {
+            if (check) strength += 25;
+          });
+          
+          // Update strength bar
+          let strengthClass = '';
+          let strengthText = '';
+          
+          if (strength <= 25) {
+            strengthClass = 'strength-weak';
+            strengthText = 'Weak';
+          } else if (strength <= 50) {
+            strengthClass = 'strength-fair';
+            strengthText = 'Fair';
+          } else if (strength <= 75) {
+            strengthClass = 'strength-good';
+            strengthText = 'Good';
+          } else {
+            strengthClass = 'strength-strong';
+            strengthText = 'Strong';
+          }
+          
+          strengthFill.style.width = strength + '%';
+          strengthFill.className = `strength-fill ${strengthClass}`;
+          strengthLevel.textContent = strengthText;
+          
+          // Update meter border color
+          if (strength <= 25) {
+            strengthMeter.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+          } else if (strength <= 50) {
+            strengthMeter.style.borderColor = 'rgba(245, 158, 11, 0.3)';
+          } else if (strength <= 75) {
+            strengthMeter.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+          } else {
+            strengthMeter.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+          }
+          
+          // Show floating message for password strength
+          if (strength === 100) {
+            showFloatingMessage('Excellent password strength!', 'success', '🔒');
+          }
+        });
+        
+        // Enhanced form interactions
+        const inputs = document.querySelectorAll('.form-input');
+        inputs.forEach(input => {
+          input.addEventListener('focus', function() {
+            this.style.transform = 'scale(1.02)';
+            this.style.borderColor = 'var(--primary-500)';
+            this.style.boxShadow = '0 0 0 4px rgba(59, 130, 246, 0.15), var(--shadow-lg)';
+            this.style.background = 'var(--dark-surface-2)';
+            
+            // Icon enhancement
+            const icon = this.parentElement.querySelector('.input-icon');
+            if (icon) {
+              icon.style.color = 'var(--primary-500)';
+              icon.style.transform = 'translateY(-50%) scale(1.1)';
+            }
+          });
+          
+          input.addEventListener('blur', function() {
+            this.style.transform = 'scale(1)';
+            this.style.borderColor = 'var(--dark-border)';
+            this.style.boxShadow = 'var(--shadow-inner)';
+            this.style.background = 'var(--dark-surface)';
+            
+            const icon = this.parentElement.querySelector('.input-icon');
+            if (icon) {
+              icon.style.color = 'var(--dark-text-muted)';
+              icon.style.transform = 'translateY(-50%) scale(1)';
+            }
+          });
+          
+          // Typing effect
+          input.addEventListener('input', function() {
+            this.style.borderColor = 'var(--success-500)';
+            setTimeout(() => {
+              if (this === document.activeElement) {
+                this.style.borderColor = 'var(--primary-500)';
+              }
+            }, 200);
+          });
+        });
+        
+        // Submit button enhancement
+        const submitBtn = document.querySelector('button[type="submit"]');
+        submitBtn.addEventListener('click', function(e) {
+          this.style.transform = 'scale(0.98)';
+          this.innerHTML = '<span>🔄</span> Creating Account...';
+          
+          setTimeout(() => {
+            this.style.transform = 'scale(1)';
+          }, 150);
+          
+          showFloatingMessage('Creating your account...', 'info', '⚡');
+        });
+        
+        // Feature cards animation
+        const featureCards = document.querySelectorAll('.feature-card');
+        featureCards.forEach((card, index) => {
+          card.style.animationDelay = `${index * 0.1}s`;
+          card.classList.add('animate-fade-in');
+          
+          // Subtle floating animation
+          setInterval(() => {
+            if (!card.matches(':hover')) {
+              card.style.transform = `translateY(${Math.sin(Date.now() * 0.001 + index) * 1}px)`;
+            }
+          }, 50);
+        });
+        
+        // Card hover effects
+        const registerCard = document.querySelector('.glass-card');
+        registerCard.addEventListener('mouseenter', function() {
+          this.style.transform = 'translateY(-4px) scale(1.01)';
+          this.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+          this.style.boxShadow = 'var(--shadow-2xl), var(--shadow-glow)';
+        });
+        
+        registerCard.addEventListener('mouseleave', function() {
+          this.style.transform = 'translateY(0) scale(1)';
+          this.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+          this.style.boxShadow = 'var(--shadow-xl)';
+        });
+        
+        // Welcome message
+        setTimeout(() => {
+          showFloatingMessage('Welcome to the future of task management!', 'success', '🚀');
+        }, 1000);
+        
+        // Username validation
+        const usernameInput = document.getElementById('username');
+        usernameInput.addEventListener('input', function() {
+          const username = this.value;
+          if (username.length >= 3) {
+            showFloatingMessage('Great username choice!', 'success', '👤');
+          }
+        });
+        
+        // Smooth transitions
+        const style = document.createElement('style');
+        style.textContent = `
+          .input-icon {
+            transition: all var(--transition-normal);
+          }
+        `;
+        document.head.appendChild(style);
+      });
+    </script>
+  </body>
+</html>
+
